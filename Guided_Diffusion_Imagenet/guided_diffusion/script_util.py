@@ -96,6 +96,7 @@ def create_model_and_diffusion(
     use_fp16,
     use_new_attention_order,
 ):
+    print("Create model and diffusion")
     model = create_model(
         image_size,
         num_channels,

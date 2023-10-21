@@ -606,6 +606,7 @@ class GaussianDiffusion:
         x,
         t,
         operated_image,
+        dino_model,
         operation,
         clip_denoised=True,
         denoised_fn=None,
@@ -669,16 +670,16 @@ class GaussianDiffusion:
                     elif operation_func != None:
                         op_im = operation_func(pred_xstart)
                     else:
-                        op_im = pred_xstart
+                        op_im = dino_model.forward(pred_xstart)
+                        
 
-                    if hasattr(operation_func.module, 'cal_loss'):
-                        selected = -1 * operation_func.module.cal_loss(pred_xstart, operated_image).unsqueeze(0)
-                    elif other_criterion != None:
-                        selected = -1 * other_criterion(op_im, operated_image)
-                    else:
-                        selected = -1 * criterion(op_im, operated_image)
-
-                    # print(selected)
+                    # if hasattr(operation_func.module, 'cal_loss'):
+                    #     selected = -1 * operation_func.module.cal_loss(pred_xstart, operated_image).unsqueeze(0)
+                    # elif other_criterion != None:
+                    #     selected = -1 * other_criterion(op_im, operated_image)
+                    # else:
+                    selected = th.nn.L1Loss()(op_im, operated_image) # Calculated the loss
+                    # selected = -1 * criterion(op_im, operated_image)
 
                     grad = th.autograd.grad(selected.sum(), x_in)[0]
                     grad = grad * operation.optim_guidance_3_wt
@@ -926,6 +927,7 @@ class GaussianDiffusion:
         model,
         shape,
         operated_image,
+        dino_model,
         operation,
         noise=None,
         clip_denoised=True,
@@ -946,6 +948,7 @@ class GaussianDiffusion:
             model,
             shape,
             operated_image,
+            dino_model,
             operation,
             noise=noise,
             clip_denoised=clip_denoised,
@@ -1016,6 +1019,7 @@ class GaussianDiffusion:
         model,
         shape,
         operated_image,
+        dino_model,
         operation,
         noise=None,
         clip_denoised=True,
@@ -1055,6 +1059,7 @@ class GaussianDiffusion:
                     img,
                     t,
                     operated_image,
+                    dino_model,
                     operation,
                     clip_denoised=clip_denoised,
                     denoised_fn=denoised_fn,

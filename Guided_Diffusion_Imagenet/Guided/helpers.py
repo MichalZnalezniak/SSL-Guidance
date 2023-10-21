@@ -66,7 +66,7 @@ def get_model_diffusion_classifier(args):
     model.load_state_dict(checkpoint)
     print('done')
     model.eval()
-    model.requires_grad_(False)
+    # model.requires_grad_(False)
     model = torch.nn.DataParallel(model).cuda()
     if len(args.classifier_path) > 2:
         print("loading classifier...")
@@ -237,7 +237,7 @@ class Operation:
         self.operation = operation
         self.shape = shape
 
-    def operator(self, label, operated_image, max_time=None):
+    def operator(self, label, operated_image, max_time=None, dino_model=None):
         max_time = max_time or self.args.max_time
         model_kwargs = {}
         model_kwargs["y"] = label
@@ -247,6 +247,7 @@ class Operation:
             partial(model_fn, model=self.model, args=self.args),
             self.shape,
             operated_image=operated_image,
+            dino_model=dino_model,
             operation=self.operation,
             clip_denoised=self.args.clip_denoised,
             model_kwargs=model_kwargs,

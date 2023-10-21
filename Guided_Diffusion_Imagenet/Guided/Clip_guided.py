@@ -12,7 +12,8 @@ from torchvision import transforms, utils
 import os
 import errno
 import clip
-
+from PIL import Image
+import torchvision
 
 
 def create_folder(path):
@@ -94,7 +95,7 @@ class Clip(nn.Module):
     def forward(self, x, y):
 
         x = (x + 1) * 0.5
-        x = TF.resize(x, (224, 224), interpolation=TF.InterpolationMode.BILINEAR)
+        x = TF.resize(x, (224, 224))
         x = self.trans(x)
 
         logits_per_image, logits_per_text = clip_model(x, y)
@@ -140,6 +141,17 @@ operation.folder = results_folder
 operator = Operation(args, operation=operation, shape=[args.samples_per_diffusion, 3, 256, 256], progressive=True)
 cnt = 0
 
+class DiNO_Loss():
+    def __init__(self):
+        self.dino_model = torch.hub.load('facebookresearch/dino:main', 'dino_resnet50').eval().cuda()
+        self.normalize = torchvision.transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                                 std=[0.26862954, 0.26130258, 0.27577711])
+    def forward(self, x):
+        x_normalized = self.normalize(x)
+        x_normalized_dino_latent_space = self.dino_model(x_normalized)
+        return x_normalized_dino_latent_space
+    
+
 def return_cv2(img, path):
     black = [255, 255, 255]
     img = (img + 1) * 0.5
@@ -149,15 +161,24 @@ def return_cv2(img, path):
     return img
 
 
-for trial in range(args.trials + 1):
-    text = []
-    for b in range(args.samples_per_diffusion):
-        text.append(args.text)
-    print(text)
-    text = clip.tokenize(text).cuda()
+def load_image(path="./target/example_image.png"):
+    target_image = Image.open(path)
+    target_image = torchvision.transforms.ToTensor()(target_image).cuda().unsqueeze(0).mul(2).sub(1)
+    normalize = torchvision.transforms.Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                                 std=[0.26862954, 0.26130258, 0.27577711])
+    target_image = normalize(target_image)
+    return target_image
 
-    print("Start")
-    output = operator.operator(label=None, operated_image=text)
+for trial in range(args.trials + 1):
+    # text = []
+    # for b in range(args.samples_per_diffusion):
+    #     text.append(args.text)
+    # print(text)
+    # text = clip.tokenize(text).cuda()
+    dino_model = DiNO_Loss()
+    operated_image = load_image()
+    operated_image = dino_model.forward(operated_image)
+    output = operator.operator(label=None, operated_image=operated_image, dino_model=dino_model)
     utils.save_image((output + 1) * 0.5, f'{results_folder}/new_img_{trial}.png')
 
 
