@@ -670,7 +670,8 @@ class GaussianDiffusion:
                     elif operation_func != None:
                         op_im = operation_func(pred_xstart)
                     else:
-                        op_im = dino_model.forward(pred_xstart)
+                        op_im = pred_xstart
+                        # op_im = dino_model.forward(pred_xstart)
                         
 
                     # if hasattr(operation_func.module, 'cal_loss'):
@@ -678,8 +679,8 @@ class GaussianDiffusion:
                     # elif other_criterion != None:
                     #     selected = -1 * other_criterion(op_im, operated_image)
                     # else:
-                    selected = th.nn.L1Loss()(op_im, operated_image) # Calculated the loss
-                    # selected = -1 * criterion(op_im, operated_image)
+                    # selected = th.nn.L1Loss()(op_im, operated_image) # Calculated the loss
+                    selected = -1 * criterion(op_im, operated_image)
 
                     grad = th.autograd.grad(selected.sum(), x_in)[0]
                     grad = grad * operation.optim_guidance_3_wt

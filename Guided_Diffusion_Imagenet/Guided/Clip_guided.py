@@ -24,7 +24,7 @@ def create_folder(path):
             raise
         pass
 
-torch.manual_seed(0)
+# torch.manual_seed(0)
 
 parser = get_parser()
 parser.add_argument('--root', default='/fs/cml-datasets/ImageNet/ILSVRC2012')
@@ -170,15 +170,15 @@ def load_image(path="./target/example_image.png"):
     return target_image
 
 for trial in range(args.trials + 1):
-    # text = []
-    # for b in range(args.samples_per_diffusion):
-    #     text.append(args.text)
-    # print(text)
-    # text = clip.tokenize(text).cuda()
-    dino_model = DiNO_Loss()
-    operated_image = load_image()
-    operated_image = dino_model.forward(operated_image)
-    output = operator.operator(label=None, operated_image=operated_image, dino_model=dino_model)
+    text = []
+    for b in range(args.samples_per_diffusion):
+        text.append(args.text)
+    print(text)
+    text = clip.tokenize(text).cuda()
+    # dino_model = DiNO_Loss()
+    # operated_image = load_image()
+    # operated_image = dino_model.forward(operated_image)
+    output = operator.operator(label=None, operated_image=text, dino_model=None)
     utils.save_image((output + 1) * 0.5, f'{results_folder}/new_img_{trial}.png')
 
 
